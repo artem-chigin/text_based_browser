@@ -2,10 +2,12 @@ import os
 import argparse
 import requests
 from collections import deque
+from bs4 import BeautifulSoup
+from colorama import Fore
 
 
 def input_verification():
-    url_start = "https://www."
+    url_start = "https://"
     print("Please, input url, saved tabs or 'exit'")
     input_command = str(input())
     if input_command == "exit":
@@ -16,7 +18,7 @@ def input_verification():
         return {"type": "path", "value": os.path.join(path, input_command)}
 
     if input_command.count(".") == 0:
-        print("error. please input correct url")
+        print("Incorrect URL")
         return input_verification()
 
     if input_command.startswith(url_start):
@@ -27,7 +29,10 @@ def input_verification():
 
 def return_tabs_file_name(url_value):
     if url_value:
-        return url_value.replace("https://www.", "")[: url_value.replace("https://www.", "").index(".")]
+        if url_value.startswith("https://"):
+            return url_value.replace("https://", "")[: url_value.replace("https://", "").index(".")]
+        elif url_value.startswith("https://www."):
+            return url_value.replace("https://www.", "")[: url_value.replace("https://www.", "").index(".")]
 
 
 def save_tab(url, content, path_to_folder):
@@ -40,16 +45,23 @@ def save_tab(url, content, path_to_folder):
 
 
 def open_tabs(input_value):
+    # print(input_value)
     with open(input_value["value"], "rt", encoding="utf-8") as file:
         content = file.read()
         print(content)
 
 
+def parse_site_content(site):
+    soup = BeautifulSoup(site.content, 'html.parser')
+    return soup.get_text()
+
+
 def open_url(input_value):
     r = requests.get(input_value["value"])
-    r.encoding = "utf-8"
+
     if r:
-        content = r.text
+
+        content = parse_site_content(r)
         save_tab(input_value["value"], content, path)
         print(content)
 
