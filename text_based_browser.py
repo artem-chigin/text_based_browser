@@ -22,9 +22,9 @@ def input_verification():
         return input_verification()
 
     if input_command.startswith(url_start):
-        return {"type": "url", "value": input_command}
+        return {"type": "url", "value": input_command.strip()}
     else:
-        return {"type": "url", "value": url_start + input_command}
+        return {"type": "url", "value": url_start + input_command.strip()}
 
 
 def return_tabs_file_name(url_value):
@@ -38,48 +38,36 @@ def return_tabs_file_name(url_value):
 def save_tab(url, content, path_to_folder):
     f_name = return_tabs_file_name(url)
     path_to = os.path.join(path_to_folder, f_name)
-    if not os.path.exists(path_to):
-        with open(path_to, "wt", encoding="utf-8") as file:
-            file.write(content)
+    # if not os.path.exists(path_to):
+    #     with open(path_to, "wt", encoding="utf-8") as file:
+    #         file.write(content)
+    with open(path_to, "wt", encoding="utf-8") as file:
+        file.write(content)
     return path_to
 
 
 def open_tabs(input_value):
-    # print(input_value)
     with open(input_value["value"], "rt", encoding="utf-8") as file:
         content = file.read()
         print(content)
 
 
 def print_site_content(page):
-    soup = BeautifulSoup(page.content, 'html.parser')
-    # a_tags = soup.find_all("a")
-    # blue_text = []
-    # for i in a_tags:
-    #     blue_text.append(i.text)
-    # print(blue_text)
-    # page = soup.get_text()
-    # for line in page:
+    a_tags = page.find_all("a")
+    for content in a_tags:
+        content.string = "".join([Fore.BLUE, content.get_text(), Fore.RESET])
 
-    result = soup.find_all(["title", "p", "h1", "h2", "li"])
-    for line in result:
-        for tag in line:
-            if tag.name == "a" and not tag.content:
-                print(Fore.BLUE, "\n" + tag.text.strip(), sep="", end="")
-                print(" ", end="")
-            else:
-                print(Fore.RESET, tag.text.strip(), sep="", end="")
-
-    return soup.get_text()
+    return page
 
 
 def open_url(input_value):
     r = requests.get(input_value["value"])
 
     if r:
-        content = print_site_content(r)
+        soup = BeautifulSoup(r.content, 'html.parser')
+        content = print_site_content(soup).get_text()
         save_tab(input_value["value"], content, path)
-        # print(content)
+        print(content)
 
     else:
         print(f"error - {r.status_code}.")
@@ -92,16 +80,12 @@ def program(input_v, visited_p, last_input=None):
 
         if input_value["type"] == "url":
             open_url(input_value)
-            print(last_input)
-            # last_input = return_tabs_file_name(last_input["value"])
             if last_input:
                 visited_p.append({"type": "path", "value": os.path.join(path, return_tabs_file_name(last_input["value"]))})
 
         if input_value["type"] == "command" and input_value["value"] == "back":
             if len(visited_p) != 0:
                 new_input = visited_p.pop()
-                # print(visited_p, new_input)
-                # open_url(new_input)
                 open_tabs(new_input)
                 return program(input_verification(), visited_p, last_input)
 
@@ -122,8 +106,8 @@ path = args.path
 if not os.path.exists(path):
     # print("path is not exist")
     os.mkdir(path)
-# else:
-#     print("path is exist")
+else:
+    print("path is exist")
 
 visited_pages = deque()
 value = input_verification()
