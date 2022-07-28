@@ -51,8 +51,25 @@ def open_tabs(input_value):
         print(content)
 
 
-def parse_site_content(site):
-    soup = BeautifulSoup(site.content, 'html.parser')
+def print_site_content(page):
+    soup = BeautifulSoup(page.content, 'html.parser')
+    # a_tags = soup.find_all("a")
+    # blue_text = []
+    # for i in a_tags:
+    #     blue_text.append(i.text)
+    # print(blue_text)
+    # page = soup.get_text()
+    # for line in page:
+
+    result = soup.find_all(["title", "p", "h1", "h2", "li"])
+    for line in result:
+        for tag in line:
+            if tag.name == "a" and not tag.content:
+                print(Fore.BLUE, "\n" + tag.text.strip(), sep="", end="")
+                print(" ", end="")
+            else:
+                print(Fore.RESET, tag.text.strip(), sep="", end="")
+
     return soup.get_text()
 
 
@@ -60,10 +77,9 @@ def open_url(input_value):
     r = requests.get(input_value["value"])
 
     if r:
-
-        content = parse_site_content(r)
+        content = print_site_content(r)
         save_tab(input_value["value"], content, path)
-        print(content)
+        # print(content)
 
     else:
         print(f"error - {r.status_code}.")
